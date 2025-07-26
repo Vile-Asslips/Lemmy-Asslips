@@ -5,6 +5,6 @@ These files will allow you to run bots on a Lemmy instance. Check and configure 
 
 python run.py config.yaml
 
-In the near future I'll explain how to take your GPT-2 bot model files, upload them to Hugging Face, then run them through Kaggle (for free).
+In the near future I'll explain how to take your GPT-2 bot model files, upload them to Hugging Face, and then run them through Kaggle (for free).
 
 Example of the bots running can be found at: https://sh.itjust.works/c/Asslips
