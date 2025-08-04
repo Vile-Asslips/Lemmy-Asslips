@@ -2,53 +2,115 @@
 # Global settings
 # ──────────────────────────────────────────────────────────────
 
-# The Lemmy instance URL and community name
-instance: [https://...]
-community: [community name]
+instance: https://sh.itjust.works
+community: Asslips
 
 # Logging & debug
 log_dir: logs
-debug: true              # set to false to silence DEBUG logs
+debug: true
 
 # Optional filters & gating
-toxicity_filter: false   # set to true to enable Detoxify filtering
-max_replies: 2           # max comments/replies per scan loop
-comment_roll: 70         # 1–100; bot only replies when rand ≥ this
+toxicity_filter: false   # (kept for compatibility; filtering uses toxic_words below)
+max_replies: 3 # max replies per loop
+comment_roll: 70 # rolling a dice 0 - 100 and if it hits this number or above it will post a comment
 reply_delay_min: 300   # seconds between comments (lower)
-reply_delay_max: 600  # seconds between comments (upper)
-initial_post: true   # ← post immediately on startup if true
+reply_delay_max: 600   # seconds between comments (upper)
+initial_post: false #If you reboot your bots, will they start a new post right away? If you host on Kaggle, just leave as false.
+
+# Fallback configuration
+fallback_file: fallbacks_expanded.yaml #leave alone
+fallback_history_size: 10 #how many fallbacks from fallbacks_expanded it chooses from when it's time to use one for commenting.
 
 # NEW: custom toxic words (any occurrence will be filtered out)
 toxic_words:
-  - badword 1
-  - badword 2
-  - badword 3 
-  - badword 4
+  - n##### #Black person slander
+  - f## #gay male slander
+  - f##### #gay male slaner
+  - r### #forced sex.. fill in the  blank
+  - homework #leave this
+  - assignment #leave this
+  
+  #Toxic words are filtered on this version so Github doesn't take action against me.
 
-# ──────────────────────────────────────────────────────────────
 # Bot definitions
-# ──────────────────────────────────────────────────────────────
-
-# name: Bot 1 # Name the bot
-# model: Links to your Hugging Face (or local dir) mdoel. 
-# model: Username/model # Check the URL if on Hugging Face
-# username: your bots login username
-# password: your bots login password
-# postfreq is the number of hours a bot posts a NEW thread
-
 bots:
-  - name: Bot 1
-    model: HuggingFaceUser/Model
-    username: Lemmy Username
-    password: Lemmy Password
-    postfreq: 4
-  - name: Bot 2
-    model: HuggingFaceUser/Model
-    username: Lemmy Username
-    password: Lemmy Password
-    postfreq: 4
-  - name: Bot 3
-    model: HuggingFaceUser/Model
-    username: Lemmy Username
-    password: Lemmy Password
-    postfreq: 4
+  - name: NAME #Nickname or name of your bot
+    model: Model path #HuggingFace or Local path. HuggingFace path is username/model ( no trailing / )
+    username: Login Name #the login name - all lowercase works best
+    password: Password #password
+    postfreq: 3 #How many hours should the bot post a new post (this does not relate to comments!)
+    max_new_tokens: 128 #leave alone
+    min_new_tokens: 32 #leave alone
+    max_new_tokens_cap: 256 #leave alone
+
+  - name: NAME #Nickname or name of your bot
+    model: Model path #HuggingFace or Local path. HuggingFace path is username/model ( no trailing / )
+    username: Login Name #the login name - all lowercase works best
+    password: Password #password
+    postfreq: 3 #How many hours should the bot post a new post (this does not relate to comments!)
+    max_new_tokens: 128 #leave alone
+    min_new_tokens: 32 #leave alone
+    max_new_tokens_cap: 256 #leave alone
+
+  - name: NAME #Nickname or name of your bot
+    model: Model path #HuggingFace or Local path. HuggingFace path is username/model ( no trailing / )
+    username: Login Name #the login name - all lowercase works best
+    password: Password #password
+    postfreq: 3 #How many hours should the bot post a new post (this does not relate to comments!)
+    max_new_tokens: 128 #leave alone
+    min_new_tokens: 32 #leave alone
+    max_new_tokens_cap: 256 #leave alone
+
+  - name: NAME #Nickname or name of your bot
+    model: Model path #HuggingFace or Local path. HuggingFace path is username/model ( no trailing / )
+    username: Login Name #the login name - all lowercase works best
+    password: Password #password
+    postfreq: 3 #How many hours should the bot post a new post (this does not relate to comments!)
+    max_new_tokens: 128 #leave alone
+    min_new_tokens: 32 #leave alone
+    max_new_tokens_cap: 256 #leave alone
+
+  - name: NAME #Nickname or name of your bot
+    model: Model path #HuggingFace or Local path. HuggingFace path is username/model ( no trailing / )
+    username: Login Name #the login name - all lowercase works best
+    password: Password #password
+    postfreq: 3 #How many hours should the bot post a new post (this does not relate to comments!)
+    max_new_tokens: 128 #leave alone
+    min_new_tokens: 32 #leave alone
+    max_new_tokens_cap: 256 #leave alone
+
+  - name: NAME #Nickname or name of your bot
+    model: Model path #HuggingFace or Local path. HuggingFace path is username/model ( no trailing / )
+    username: Login Name #the login name - all lowercase works best
+    password: Password #password
+    postfreq: 3 #How many hours should the bot post a new post (this does not relate to comments!)
+    max_new_tokens: 128 #leave alone
+    min_new_tokens: 32 #leave alone
+    max_new_tokens_cap: 256 #leave alone
+
+  - name: NAME #Nickname or name of your bot
+    model: Model path #HuggingFace or Local path. HuggingFace path is username/model ( no trailing / )
+    username: Login Name #the login name - all lowercase works best
+    password: Password #password
+    postfreq: 3 #How many hours should the bot post a new post (this does not relate to comments!)
+    max_new_tokens: 128 #leave alone
+    min_new_tokens: 32 #leave alone
+    max_new_tokens_cap: 256 #leave alone
+
+  - name: NAME #Nickname or name of your bot
+    model: Model path #HuggingFace or Local path. HuggingFace path is username/model ( no trailing / )
+    username: Login Name #the login name - all lowercase works best
+    password: Password #password
+    postfreq: 3 #How many hours should the bot post a new post (this does not relate to comments!)
+    max_new_tokens: 128 #leave alone
+    min_new_tokens: 32 #leave alone
+    max_new_tokens_cap: 256 #leave alone
+
+  - name: NAME #Nickname or name of your bot
+    model: Model path #HuggingFace or Local path. HuggingFace path is username/model ( no trailing / )
+    username: Login Name #the login name - all lowercase works best
+    password: Password #password
+    postfreq: 3 #How many hours should the bot post a new post (this does not relate to comments!)
+    max_new_tokens: 128 #leave alone
+    min_new_tokens: 32 #leave alone
+    max_new_tokens_cap: 256 #leave alone
