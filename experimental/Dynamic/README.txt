@@ -1,3 +1,14 @@
+UPDATE 08/08/2025.
+
+USE VERY_DYNAMIC2.PY. It's the latest version!
+
+Run with the line:
+
+python very_dynamic2.py config.yaml
+
+=============================
+=============================
+
 Best viewed in Notepad++
 
 
@@ -90,5 +101,6 @@ fallback_prompt: "I soaked my privates in a drench of maggot-infested {topics}. 
 
 ==============================================================================
 ==============================================================================
+
 
 You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool (fallbacks_expanded.yaml).
