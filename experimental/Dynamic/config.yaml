@@ -28,6 +28,8 @@ toxic_words:
   - assault
 
 # Bot definitions
+# ban_pop is related to Sour_Asslips constantly saying that.
+# ban_unicode_escapes is due to Turbo Assquake constantly saying \u200d and variants of that. Keep false, but activate if your bots starts doing it.
 bots:
   - name: 
     model: 
@@ -43,6 +45,8 @@ bots:
     length_initial: 10         # initial length threshold
     length_min: 0              # minimum length allowed after full relaxation
     fallback_prompt: "My colon just detonated a glacier of {topics} rancid turd ice and the stench is rewriting my DNA." #You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool.
+    ban_pop: false
+    ban_unicode_escapes: false
 
   - name: 
     model: 
@@ -58,6 +62,8 @@ bots:
     length_initial: 10         # initial length threshold
     length_min: 0              # minimum length allowed after full relaxation
     fallback_prompt: "I’m drowning in a tidal wave of mutant sphincter cheese {topics} oozing from a thousand butt cracks." #You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool.
+    ban_pop: false
+    ban_unicode_escapes: false
 
   - name: 
     model: 
@@ -73,6 +79,8 @@ bots:
     length_initial: 10         # initial length threshold
     length_min: 0              # minimum length allowed after full relaxation
     fallback_prompt: "My skull is stuffed with half-rotted {topics} burrito guts pulsing to the beat of my own farts." #You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool.
+    ban_pop: false
+    ban_unicode_escapes: false
 
   - name: 
     model: 
@@ -88,6 +96,8 @@ bots:
     length_initial: 10         # initial length threshold
     length_min: 0              # minimum length allowed after full relaxation
     fallback_prompt: "I’ve got a live septic tank of {topics} diarrhea brewing in my bowels that’s flooding my brain." #You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool.
+    ban_pop: false
+    ban_unicode_escapes: false
 
   - name: 
     model: 
@@ -103,6 +113,8 @@ bots:
     length_initial: 10         # initial length threshold
     length_min: 0              # minimum length allowed after full relaxation
     fallback_prompt: "My entrails are twirling in a {topics} blender of sour pus and dried maggot carcasses." #You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool.
+    ban_pop: false
+    ban_unicode_escapes: false
 
   - name: 
     model: 
@@ -118,6 +130,8 @@ bots:
     length_initial: 10         # initial length threshold
     length_min: 0              # minimum length allowed after full relaxation
     fallback_prompt: "I’m swimming in a sea of rancid sweat-soaked {topics} asscrack lint and it’s melting my sanity." #You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool.
+    ban_pop: false
+    ban_unicode_escapes: false
 
   - name: 
     model: 
@@ -133,6 +147,8 @@ bots:
     length_initial: 10         # initial length threshold
     length_min: 0              # minimum length allowed after full relaxation
     fallback_prompt: "My brain is pickled in a vat of toxic {topics} butt-butter slime infested with worm colonies." #You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool.
+    ban_pop: false
+    ban_unicode_escapes: false
 
   - name: 
     model: 
@@ -148,6 +164,8 @@ bots:
     length_initial: 10         # initial length threshold
     length_min: 0              # minimum length allowed after full relaxation
     fallback_prompt: "I’ve been force-fed a slurry of {topics} moldy toilet paper chunks and can’t stop gagging." #You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool.
+    ban_pop: false
+    ban_unicode_escapes: false
 
   - name: 
     model: 
@@ -163,6 +181,8 @@ bots:
     length_initial: 10         # initial length threshold
     length_min: 0              # minimum length allowed after full relaxation
     fallback_prompt: "My intestines are a carnival ride of {topics} putrid gas explosions and I’m trapped on loop." #You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool.
+    ban_pop: false
+    ban_unicode_escapes: false
     
   - name: 
     model: 
@@ -178,3 +198,5 @@ bots:
     length_initial: 10         # initial length threshold
     length_min: 0              # minimum length allowed after full relaxation
     fallback_prompt: "My mouth is packed with rancid {topics} sphincter dandruff and it’s echoing in every thought." #You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool.
+    ban_pop: false
+    ban_unicode_escapes: false
