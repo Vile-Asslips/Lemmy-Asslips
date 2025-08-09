@@ -1,0 +1,104 @@
+# ──────────────────────────────────────────────────────────────
+# Global settings
+# ──────────────────────────────────────────────────────────────
+# NOTE: YAML is whitespace-sensitive. Use spaces (not tabs).
+# Two spaces per indent is a safe default.
+
+# Lemmy instance & community
+instance: "https://sh.itjust.works"   # Base URL of your Lemmy instance (no trailing slash)
+community: "Asslips"                  # Community name (e.g., "Asslips" or "c/asslips")
+
+# Logging & debug
+log_dir: "logs"                       # Where to write logs (folder is created if missing)
+debug: true                           # true = verbose logs (great for testing); false = quieter
+
+# Optional filters & gating
+toxicity_filter: false                # Legacy switch; actual filtering uses toxic_words below
+max_replies: 3                        # Max replies *per run cycle* for each bot (prevents hogging)
+comment_roll: 70                      # Chance to SKIP a comment (percent). 0=never skip, 100=skip all.
+reply_delay_min: 300                  # Min seconds between comments (adds human-ish pacing)
+reply_delay_max: 600                  # Max seconds between comments
+initial_post: false                   # If true, the bot is allowed to create a top-level post immediately
+
+# Fallback configuration
+fallback_file: "fallbacks_expanded.yaml"  # YAML file with fallback templates (supports {topics})
+fallback_history_size: 10                 # Keep N recent fallbacks out of rotation to avoid repeats
+
+# NEW: custom toxic words (any occurrence will be filtered out)
+toxic_words:
+  - homework
+  - assignment
+  - assault
+  # Add more words or phrases to ban at the cleaner level
+
+# ──────────────────────────────────────────────────────────────
+# Bot definitions
+# Each bot inherits the global settings but can override anything below.
+# Fill in username/password for each bot (or switch to token auth if you have it).
+# ──────────────────────────────────────────────────────────────
+bots:
+  # ===== Example bot 1 (fully filled) =====
+  - name: "Turbo Assquake"
+    model: "aaaacash/AITA-GPT2-medium"     # Hugging Face repo OR local folder path (e.g., "./AITA-GPT2-medium")
+    username: "turbo_assquake_gpt2"        # Lemmy username
+    password: "REPLACE_ME"                 # Lemmy password (tip: consider env vars instead of plaintext)
+    postfreq: 3                            # New top-level post every N hours (comments are NOT throttled by this)
+
+    # Generation budgets
+    max_new_tokens: 128                    # First pass generation budget
+    min_new_tokens: 32                     # Don’t cut replies below this length (when supported)
+    max_new_tokens_cap: 256                # Upper cap used by finish/redo passes
+
+    # Dynamic strictness (tries strict rules first, then relaxes each attempt)
+    strict_mode: true
+    mention_strict_tries: 5                # First N attempts must include a word from title/body (posts only)
+    complete_strict_tries: 5               # First M attempts must end with a complete thought
+    length_initial: 10                     # Initial min word count requirement
+    length_min: 0                          # Floor after relaxing
+
+    # Final fallback: the bot GENERATES from this prompt.
+    # {topics} injects ALL keywords (e.g., "battery, charger and voltage").
+    fallback_prompt: "My colon just detonated a glacier of {topics} rancid turd ice and the stench is rewriting my DNA."
+
+    # Token bans (generation-time). Set to true if you see those artifacts.
+    ban_pop: false                         # Ban “pop/pops/popup/pop-up” tokens at generation time
+    ban_unicode_escapes: false             # Ban \u / \U / \x escapes at generation time
+
+  # ===== Example bot 2 (shows local model path + different strictness) =====
+  - name: "Dingleberry"
+    model: "./AITA-GPT2-medium"            # Use a local model folder you cloned/downloaded
+    username: "dingleberry_asslips_gpt2"
+    password: "REPLACE_ME"
+    postfreq: 4
+    max_new_tokens: 160
+    min_new_tokens: 32
+    max_new_tokens_cap: 256
+
+    strict_mode: true
+    mention_strict_tries: 5
+    complete_strict_tries: 5
+    length_initial: 12
+    length_min: 0
+
+    fallback_prompt: "I’m drowning in a tidal wave of mutant sphincter cheese {topics} oozing from a thousand butt cracks."
+
+    ban_pop: true                          # This one hard-bans the “pop” family
+    ban_unicode_escapes: true              # This one hard-bans unicode escape starters
+
+  # ===== Template for more bots (copy/paste & fill) =====
+  - name: ""                                # ← friendly display name (logs only)
+    model: ""                               # ← HF repo (e.g., "gpt2") or local path ("./gpt2")
+    username: ""                            # ← Lemmy username
+    password: ""                            # ← Lemmy password
+    postfreq: 3
+    max_new_tokens: 128
+    min_new_tokens: 32
+    max_new_tokens_cap: 256
+    strict_mode: true
+    mention_strict_tries: 5
+    complete_strict_tries: 5
+    length_initial: 10
+    length_min: 0
+    fallback_prompt: "My skull is stuffed with half-rotted {topics} burrito guts pulsing to the beat of my own farts."
+    ban_pop: false
+    ban_unicode_escapes: false
