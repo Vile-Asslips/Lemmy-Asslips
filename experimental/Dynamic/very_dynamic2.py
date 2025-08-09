@@ -382,247 +382,249 @@ class BotThread(threading.Thread):
     def _attempt_replies(self, sources: list[dict[str, Any]]) -> None:
         attempts = 0
         for src in sources:
-            if attempts >= self.max_replies:
-                break
-            if random.randint(1, 100) < self.roll_needed:
-                continue
-
-            post_id = src.get("post_id")
-            is_comment = src.get("parent_id") is not None
-            raw_text = src.get("text", "").strip()
-
-            history = self.db.get_thread_history(post_id, limit=3)
-            history_str = ""
-            if history:
-                reversed_hist = list(reversed(history))
-                history_lines = []
-                for author, gen in reversed_hist:
-                    snippet = gen.replace("\n", " ").strip()
-                    history_lines.append(f"{author}: {snippet}")
-                history_str = "Recent thread context:\n" + "\n".join(history_lines) + "\n\n"
-
-            # build topics (and forced words) differently for posts vs. comments
-            orig_topics = extract_keywords(raw_text, max_words=5)
-            if not is_comment:
-                # for posts: inject 1–2 words from title & body
-                title, body = split_title_body(raw_text)
-                title_words = re.findall(r"\b[A-Za-z]{4,}\b", title)[:2]
-                body_words  = re.findall(r"\b[A-Za-z]{4,}\b", body)[:2]
-                topics      = orig_topics + title_words + body_words
-            else:
-                # for comments: no forced words, but still define the vars
-                title_words = []
-                body_words  = []
-                topics      = orig_topics
-            topic_str = ", ".join(topics) if topics else "general"
-            few_shot   = make_few_shot_example(topics)
-
-            # build prompt
-            if is_comment:
-                prompt = (
-                    f"{few_shot}"
-                    f"You are replying to a comment in the Asslips community. Original comment:\n\"{raw_text}\"\n\n"
-                    f"Main topics: {topic_str}\n"
-                    "Instructions:\n"
-                    "1. Briefly acknowledge something specific from that comment (reference at least one of the topics above) in one sentence.\n"
-                    "2. Then provide a relevant, on-topic response or continuation.\n"
-                    "3. Do not repeat more than 10 words verbatim; paraphrase in your own words.\n"
-                    "4. Keep it to 2-3 sentences and finish the thought. Reply:"
-                )
-            else:
-                title, body = split_title_body(raw_text)
-                if len(body) > 1000:
-                    body = body[:1000].rsplit(" ", 1)[0] + "..."
-                prompt = (
-                    f"{few_shot}"
-                    f"You are participating in the Asslips community. Below is the original post:\n\n"
-                    f"Title: \"{title}\"\n"
-                    f"Body: \"{body}\"\n\n"
-                    f"Main topics: {topic_str}\n"
-                    "Instructions:\n"
-                    "1. Briefly acknowledge something specific from the title or body (reference at least one of the topics above) in one sentence.\n"
-                    "2. Then give an on-topic follow-up, advice, or commentary related to that.\n"
-                    "3. Do not repeat more than 10 words verbatim from the original; use your own phrasing.\n"
-                    "4. Keep it coherent, avoid unrelated rambling, and end with a complete thought. Limit to about 2-3 sentences. Reply:"
-                )
-
-            reply = ""
-            best_candidate = ""
-            best_score = -1
-
-            # staged attempts with dynamic strictness
-            # pull per-bot settings
-            strict = self.cfg.get("strict_mode", False)
-            mention_tries   = int(self.cfg.get("mention_strict_tries",   2))
-            complete_tries  = int(self.cfg.get("complete_strict_tries",  2))
-            len_init        = int(self.cfg.get("length_initial",       10))
-            len_min         = int(self.cfg.get("length_min",            0))
-
-            # decide how many tries (more for comments)
-            max_tries = 5 if is_comment else 3
-
-            # loop over attempts
-            for attempt in range(max_tries):
-                # pick temperature/top_p per stage
-                if attempt == 0:
-                    temp, tp = 0.65, 0.75
-                elif attempt == 1:
-                    temp, tp = 0.70, 0.80
-                else:
-                    temp, tp = 0.80, 0.90
-
-                # generate
-                candidate = self._gen(prompt, skip_toxic=False,
-                                       temperature=temp, top_p=tp).strip()
-                if candidate.lower().startswith("reply:"):
-                    candidate = candidate[len("reply:"):].strip()
-                if not candidate or candidate.lower() == raw_text.lower():
+            try:
+                if attempts >= self.max_replies:
+                    break
+                if random.randint(1, 100) < self.roll_needed:
                     continue
 
-                # finish cut-off replies
-                candidate = self._try_complete(candidate, topic_str, temp, tp)
+                post_id    = src.get("post_id")
+                is_comment = src.get("parent_id") is not None
+                raw_text   = src.get("text", "").strip()
 
-                # If this is a comment and the candidate still looks off-topic or empty,
-                # give it one more shot with an explicit Instruction prompt:
-                if is_comment and (not candidate or not is_relevant_enough(candidate, topics)):
-                    inst_prompt = (
-                        f"You are replying to a comment in the Asslips community.\n"
-                        f"Original comment: \"{raw_text}\"\n\n"
+                history = self.db.get_thread_history(post_id, limit=3)
+                history_str = ""
+                if history:
+                    reversed_hist = list(reversed(history))
+                    history_lines = []
+                    for author, gen in reversed_hist:
+                        snippet = gen.replace("\n", " ").strip()
+                        history_lines.append(f"{author}: {snippet}")
+                    history_str = "Recent thread context:\n" + "\n".join(history_lines) + "\n\n"
+
+                # build topics (and forced words) differently for posts vs. comments
+                orig_topics = extract_keywords(raw_text, max_words=5)
+                if not is_comment:
+                    # for posts: inject 1–2 words from title & body
+                    title, body = split_title_body(raw_text)
+                    title_words = re.findall(r"\b[A-Za-z]{4,}\b", title)[:2]
+                    body_words  = re.findall(r"\b[A-Za-z]{4,}\b", body)[:2]
+                    topics      = orig_topics + title_words + body_words
+                else:
+                    # for comments: no forced words, but still define the vars
+                    title_words = []
+                    body_words  = []
+                    topics      = orig_topics
+                topic_str = ", ".join(topics) if topics else "general"
+                few_shot  = make_few_shot_example(topics)
+
+                # build prompt
+                if is_comment:
+                    prompt = (
+                        f"{few_shot}"
+                        f"You are replying to a comment in the Asslips community. Original comment:\n\"{raw_text}\"\n\n"
+                        f"Main topics: {topic_str}\n"
                         "Instructions:\n"
-                        "1. Briefly acknowledge something specific from that comment.\n"
-                        "2. Provide a relevant, on-topic response or continuation.\n"
-                        "3. Do not repeat more than 10 words verbatim; paraphrase.\n"
-                        "4. Keep it coherent and finish with a complete thought in 2-3 sentences.\n"
-                        "Reply:"
+                        "1. Briefly acknowledge something specific from that comment (reference at least one of the topics above) in one sentence.\n"
+                        "2. Then provide a relevant, on-topic response or continuation.\n"
+                        "3. Do not repeat more than 10 words verbatim; paraphrase in your own words.\n"
+                        "4. Keep it to 2-3 sentences and finish the thought. Reply:"
                     )
-                    inst_candidate = self._gen(inst_prompt, skip_toxic=False, temperature=temp, top_p=tp).strip()
-                    if inst_candidate:
-                        candidate = inst_candidate
+                else:
+                    title, body = split_title_body(raw_text)
+                    if len(body) > 1000:
+                        body = body[:1000].rsplit(" ", 1)[0] + "..."
+                    prompt = (
+                        f"{few_shot}"
+                        f"You are participating in the Asslips community. Below is the original post:\n\n"
+                        f"Title: \"{title}\"\n"
+                        f"Body: \"{body}\"\n\n"
+                        f"Main topics: {topic_str}\n"
+                        "Instructions:\n"
+                        "1. Briefly acknowledge something specific from the title or body (reference at least one of the topics above) in one sentence.\n"
+                        "2. Then give an on-topic follow-up, advice, or commentary related to that.\n"
+                        "3. Do not repeat more than 10 words verbatim from the original; use your own phrasing.\n"
+                        "4. Keep it coherent, avoid unrelated rambling, and end with a complete thought. Limit to about 2-3 sentences. Reply:"
+                    )
 
-                # decide which rules to enforce this round
-                enforce_mention = strict and (attempt < mention_tries) and not is_comment
-                enforce_complete = strict and (attempt < complete_tries)
-                # length threshold decays from len_init down to len_min
-                length_threshold = max(
-                    len_min,
-                    len_init - int((len_init - len_min) * (attempt / max(1, max_tries-1)))
-                )
+                reply = ""
+                best_candidate = ""
+                best_score = -1
 
-                # 1) forced‐mention on posts
-                if enforce_mention:
-                    if not any(
-                        re.search(rf"\b{re.escape(w)}\b", candidate, re.IGNORECASE)
-                        for w in title_words + body_words
-                    ):
+                # staged attempts with dynamic strictness (per-bot settings)
+                strict = self.cfg.get("strict_mode", False)
+                mention_tries   = int(self.cfg.get("mention_strict_tries",   2))
+                complete_tries  = int(self.cfg.get("complete_strict_tries",  2))
+                len_init        = int(self.cfg.get("length_initial",       10))
+                len_min         = int(self.cfg.get("length_min",            0))
+                max_tries       = 5 if is_comment else 3
+
+                for attempt in range(max_tries):
+                    # pick temperature/top_p per stage
+                    if attempt == 0:
+                        temp, tp = 0.65, 0.75
+                    elif attempt == 1:
+                        temp, tp = 0.70, 0.80
+                    else:
+                        temp, tp = 0.80, 0.90
+
+                    # generate
+                    candidate = self._gen(prompt, skip_toxic=False, temperature=temp, top_p=tp).strip()
+                    if candidate.lower().startswith("reply:"):
+                        candidate = candidate[len("reply:"):].strip()
+                    if not candidate or candidate.lower() == raw_text.lower():
                         continue
 
-                # 2) complete‐thought check
-                if enforce_complete and self._is_incomplete_reply(candidate):
-                    continue
+                    # finish cut-off replies
+                    candidate = self._try_complete(candidate, topic_str, temp, tp)
 
-                # 3) length requirement
-                if len(candidate.split()) < length_threshold:
-                    continue
+                    # comment: one instruction-guided retry if off-topic/empty
+                    if is_comment and (not candidate or not is_relevant_enough(candidate, topics)):
+                        inst_prompt = (
+                            f"You are replying to a comment in the Asslips community.\n"
+                            f"Original comment: \"{raw_text}\"\n\n"
+                            "Instructions:\n"
+                            "1. Briefly acknowledge something specific from that comment.\n"
+                            "2. Provide a relevant, on-topic response or continuation.\n"
+                            "3. Do not repeat more than 10 words verbatim; paraphrase.\n"
+                            "4. Keep it coherent and finish with a complete thought in 2-3 sentences.\n"
+                            "Reply:"
+                        )
+                        inst_candidate = self._gen(inst_prompt, skip_toxic=False, temperature=temp, top_p=tp).strip()
+                        if inst_candidate:
+                            candidate = inst_candidate
 
-                # simple scoring
-                score = 0
-                if is_relevant_enough(candidate, topics):
-                    score += 2
-                if not self._is_incomplete_reply(candidate):
-                    score += 1
-                if len(candidate.split()) >= length_threshold:
-                    score += 1
+                    # decide which rules to enforce this round
+                    enforce_mention  = strict and (attempt < mention_tries)  and not is_comment
+                    enforce_complete = strict and (attempt < complete_tries)
+                    length_threshold = max(
+                        len_min,
+                        len_init - int((len_init - len_min) * (attempt / max(1, max_tries - 1)))
+                    )
 
-                # remember best
-                if score > best_score:
-                    best_score     = score
-                    best_candidate = candidate
+                    # 1) forced-mention on posts
+                    if enforce_mention:
+                        if not any(re.search(rf"\b{re.escape(w)}\b", candidate, re.IGNORECASE) for w in title_words + body_words):
+                            continue
 
-                # early accept if fully past enforced rules
-                if not enforce_mention and not (enforce_complete and self._is_incomplete_reply(candidate)) \
-                   and len(candidate.split()) >= length_threshold:
-                    reply = candidate
-                    break
+                    # 2) complete-thought check
+                    if enforce_complete and self._is_incomplete_reply(candidate):
+                        continue
 
-            # refinement pass
-            if not reply and best_candidate:
-                refine_prompt = (
-                    f"Improve the following reply to make it more on-topic, include at least one of the main topics: {topic_str}, "
-                    f"and finish the thought. Previous reply: \"{best_candidate}\". Reply:"
-                )
-                refined = self._gen(refine_prompt, skip_toxic=False, temperature=0.7, top_p=0.85, override_new_tokens=128).strip()
-                if refined.lower().startswith("reply:"):
-                    refined = refined[len("reply:"):].strip()
-                if refined and is_relevant_enough(refined, topics) and not self._is_incomplete_reply(refined):
-                    reply = refined
-                else:
-                    reply = best_candidate
+                    # 3) length requirement
+                    if len(candidate.split()) < length_threshold:
+                        continue
 
-            # focused low-entropy pass
-            if not reply:
-                focused_prompt = (
-                    f"{prompt}\n\nNow respond in one concise sentence that references at least one of the main topics and completes the thought."
-                )
-                focused = self._gen(focused_prompt, skip_toxic=False, temperature=0.3, top_p=0.9).strip()
-                if focused.lower().startswith("reply:"):
-                    focused = focused[len("reply:"):].strip()
-                if focused and is_relevant_enough(focused, topics):
-                    reply = focused
+                    # simple scoring
+                    score = 0
+                    if is_relevant_enough(candidate, topics):
+                        score += 2
+                    if not self._is_incomplete_reply(candidate):
+                        score += 1
+                    if len(candidate.split()) >= length_threshold:
+                        score += 1
 
-            # final finish guard if still incomplete
-            if reply and self._is_incomplete_reply(reply):
-                finish_prompt = f"That last reply was cut off. Finish it cleanly: \"{reply}\". Reply:"
-                extra = self._gen(finish_prompt, skip_toxic=False, temperature=0.5, top_p=0.9, override_new_tokens=64).strip()
-                if extra.lower().startswith("reply:"):
-                    extra = extra[len("reply:"):].strip()
-                if extra:
-                    reply = reply.rstrip(" .,!?:;") + " " + extra.lstrip()
+                    # remember best
+                    if score > best_score:
+                        best_score     = score
+                        best_candidate = candidate
 
-            # last-resort fallback
-            if not reply:
-                bot_fp = self.cfg.get("fallback_prompt")
-                if bot_fp:
-                    # build a comma+“and” list of all keywords
-                    if not is_comment and (title_words + body_words):
-                        pool = title_words + body_words
+                    # early accept if fully past enforced rules
+                    if not enforce_mention and not (enforce_complete and self._is_incomplete_reply(candidate)) \
+                       and len(candidate.split()) >= length_threshold:
+                        reply = candidate
+                        break
+
+                # refinement pass
+                if not reply and best_candidate:
+                    refine_prompt = (
+                        f"Improve the following reply to make it more on-topic, include at least one of the main topics: {topic_str}, "
+                        f"and finish the thought. Previous reply: \"{best_candidate}\". Reply:"
+                    )
+                    refined = self._gen(refine_prompt, skip_toxic=False, temperature=0.7, top_p=0.85, override_new_tokens=128).strip()
+                    if refined.lower().startswith("reply:"):
+                        refined = refined[len("reply:"):].strip()
+                    if refined and is_relevant_enough(refined, topics) and not self._is_incomplete_reply(refined):
+                        reply = refined
                     else:
-                        pool = orig_topics or topics
-                    if len(pool) > 1:
-                        dynamic_topics = ", ".join(pool[:-1]) + " and " + pool[-1]
-                    else:
-                        dynamic_topics = pool[0]
-                    # fill and generate
-                    prompt = bot_fp.format(topics=dynamic_topics)
-                    gen = self._gen(prompt, skip_toxic=False, temperature=0.75, top_p=0.9).strip()
-                    reply = gen or prompt
-                    self.log.debug("Dynamic multi-topic fallback for %s → %r", post_id, reply)
-                else:
-                    if is_comment:
-                        if best_candidate:
-                            reply = best_candidate
-                            self.log.debug("Best candidate used for comment %s → %r", post_id, reply)
+                        reply = best_candidate
+
+                # focused low-entropy pass
+                if not reply:
+                    focused_prompt = f"{prompt}\n\nNow respond in one concise sentence that references at least one of the main topics and completes the thought."
+                    focused = self._gen(focused_prompt, skip_toxic=False, temperature=0.3, top_p=0.9).strip()
+                    if focused.lower().startswith("reply:"):
+                        focused = focused[len("reply:"):].strip()
+                    if focused and is_relevant_enough(focused, topics):
+                        reply = focused
+
+                # final finish guard if still incomplete
+                if reply and self._is_incomplete_reply(reply):
+                    finish_prompt = f"That last reply was cut off. Finish it cleanly: \"{reply}\". Reply:"
+                    extra = self._gen(finish_prompt, skip_toxic=False, temperature=0.5, top_p=0.9, override_new_tokens=64).strip()
+                    if extra.lower().startswith("reply:"):
+                        extra = extra[len("reply:"):].strip()
+                    if extra:
+                        reply = reply.rstrip(" .,!?:;") + " " + extra.lstrip()
+
+                # last-resort fallback
+                if not reply:
+                    bot_fp = self.cfg.get("fallback_prompt")
+                    if bot_fp:
+                        # gather candidate keywords (preserve order, dedupe)
+                        if not is_comment:
+                            pool = [w for w in (title_words + body_words) if w]
                         else:
-                            self.log.debug("No candidate for comment %s → skipping", post_id)
-                            continue  # skip commenting entirely
-                    else:
-                        reply = self.fallback_manager.choose(topics, post_id)
-                        self.log.debug("YAML fallback used for post %s → %s", post_id, reply)
+                            pool = [w for w in (orig_topics) if w]
+                        if not pool:
+                            pool = [w for w in (topics) if w]
+                        pool = list(dict.fromkeys(pool))  # dedupe, keep order
 
-            # dedupe: don't repost same
-            last_hist = self.db.get_thread_history(post_id, limit=1)
-            if last_hist:
-                last_author, last_gen = last_hist[-1]
-                if last_author == self.cfg.get("username") and last_gen.strip() == reply.strip():
-                    continue
-                    
-            # clean up leading punctuation & capitalize the first letter
-            reply = reply.lstrip(' \n\r\t-–—:;,.!?\"\'')
-            if reply:
-                reply = reply[0].upper() + reply[1:]
-            reply = clean(reply)
-            self._comment(post_id, reply, parent_id=src.get("parent_id"))
-            attempts += 1
-            time.sleep(random.uniform(self.delay_min, self.delay_max))
+                        # build natural-language list safely
+                        if not pool:
+                            dynamic_topics = "this"
+                        elif len(pool) == 1:
+                            dynamic_topics = pool[0]
+                        else:
+                            dynamic_topics = ", ".join(pool[:-1]) + " and " + pool[-1]
+
+                        # fill and generate
+                        prompt = bot_fp.format(topics=dynamic_topics)
+                        gen = self._gen(prompt, skip_toxic=False, temperature=0.75, top_p=0.9).strip()
+                        reply = gen or prompt
+                        self.log.debug("Dynamic multi-topic fallback for %s → %r", post_id, reply)
+                    else:
+                        if is_comment:
+                            if best_candidate:
+                                reply = best_candidate
+                                self.log.debug("Best candidate used for comment %s → %r", post_id, reply)
+                            else:
+                                self.log.debug("No candidate for comment %s → skipping", post_id)
+                                continue
+                        else:
+                            reply = self.fallback_manager.choose(topics, post_id)
+                            self.log.debug("YAML fallback used for post %s → %s", post_id, reply)
+
+                # dedupe: don't repost same
+                last_hist = self.db.get_thread_history(post_id, limit=1)
+                if last_hist:
+                    last_author, last_gen = last_hist[-1]
+                    if last_author == self.cfg.get("username") and last_gen.strip() == reply.strip():
+                        continue
+
+                # clean up + post
+                reply = reply.lstrip(' \n\r\t-–—:;,.!?\"\'')
+                if reply:
+                    reply = reply[0].upper() + reply[1:]
+                reply = clean(reply)
+                self._comment(post_id, reply, parent_id=src.get("parent_id"))
+                attempts += 1
+                time.sleep(random.uniform(self.delay_min, self.delay_max))
+
+            except Exception:
+                self.log.exception("Error handling item: %r", src)
+                continue
+
 
     def run(self) -> None:
         while not self.stop_event.is_set():
