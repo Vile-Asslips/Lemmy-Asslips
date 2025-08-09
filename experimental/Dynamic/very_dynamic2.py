@@ -654,30 +654,30 @@ class BotThread(threading.Thread):
                 if not body:
                     body = " "
 
-            # strip URLs from the title and move them into the body
-            urls = re.findall(r'(https?://\S+|www\.\S+|\[[^\]]+\]\(https?://[^\s)]+\))', title)
-            title = re.sub(r'(https?://\S+|www\.\S+|\[[^\]]+\]\(https?://[^\s)]+\))', '', title)
+                # strip URLs from the title and move them into the body
+                urls = re.findall(r'(https?://\S+|www\.\S+|\[[^\]]+\]\(https?://[^\s)]+\))', title)
+                title = re.sub(r'(https?://\S+|www\.\S+|\[[^\]]+\]\(https?://[^\s)]+\))', '', title)
 
-            # trim a dangling "source:" and collapse shouty punctuation/spaces
-            title = re.sub(r'\bsource\s*:?\s*$', '', title, flags=re.I)
-            title = re.sub(r'!{9,}',  '!!!!!!!!', title)   # cap ! at 8
-            title = re.sub(r'\?{9,}', '????????', title)   # cap ? at 8
-            title = re.sub(r'\s{2,}', ' ', title).strip()
+                # keep dramatic punctuation but cap at 8 if you want
+                title = re.sub(r'\bsource\s*:?\s*$', '', title, flags=re.I)
+                title = re.sub(r'!{9,}',  '!!!!!!!!', title)   # cap ! at 8
+                title = re.sub(r'\?{9,}', '????????', title)   # cap ? at 8
+                title = re.sub(r'\s{2,}', ' ', title).strip()
 
-            # optional: if title is empty after scrubbing, fall back to body snippet
-            if not title:
-                title = ' '.join(body.split()[:8]) or 'Quick thought'
+                # if title emptied by scrubbing, fall back to a body snippet
+                if not title:
+                    title = ' '.join(body.split()[:8]) or 'Quick thought'
 
-            # if we stripped links, append them to the body as sources
-            if urls:
-                # normalize markdown links to plain urls
-                plain_urls = [re.sub(r'^\[.*?\]\((https?://[^\s)]+)\)$', r'\1', u) for u in urls]
-                body = (body.rstrip() + "\n\nSources: " + " ".join(plain_urls)).strip()
+                # if we stripped links, append them to the body as sources
+                if urls:
+                    plain_urls = [re.sub(r'^\[.*?\]\((https?://[^\s)]+)\)$', r'\1', u) for u in urls]
+                    body = (body.rstrip() + "\n\nSources: " + " ".join(plain_urls)).strip()
 
-            self._post(title, body)
+                # post and update the gate timers
+                self._post(title, body)
+                self.last_post_at = now
+                self.initial_post = False
 
-            self.last_post_at = now
-            self.initial_post = False
 
             feed = self.lemmy.post.list(
                 page=1,
