@@ -1,3 +1,9 @@
+Update: 08/09/2025
+
+Updated very_dynamic2.py with a patch that fixed duplicate posting.
+
+--------------------
+
 UPDATE 08/08/2025.
 
 USE VERY_DYNAMIC2.PY. It's the latest version!
@@ -104,3 +110,4 @@ fallback_prompt: "I soaked my privates in a drench of maggot-infested {topics}. 
 
 
 You can leave fallback_prompt blank or omit it on bots that should continue to use the YAML‐pool (fallbacks_expanded.yaml).
+
