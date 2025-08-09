@@ -1,0 +1,8 @@
+# ------------ core utils ------------
+pythorhead==0.26.0
+transformers>=4.30.0
+torch>=2.0.0
+detoxify==0.5.2
+PyYAML>=6.0
+
+# -----USE pip install -r requirements.txt
